@@ -1,0 +1,89 @@
+# The following function parses the xml data and returns a dataframe
+def parse_split(xmldicts, remove_tags=False):
+  #function to convert greek xml data to a dataframe / only the first mp, group, minister and ministry will have a unique column.
+    allqs = []
+    for q in xmldicts:
+        newdic = {}
+        newdic['qid'] = q['ID']
+        newdic['lastedit'] = q['Last-Edit-Date']
+        newdic['qnr'] = q['field_1']    
+        if remove_tags== True and newdic['qnr'] in toremove:
+            print("Removed match with qid {} and qnr {}.".format(newdic['qid'], newdic['qnr']))
+            continue
+        newdic['type'] = q['field_2']
+        newdic['date'] = q['field_3']
+        newdic['topic'] = q['field_4']
+        try:
+            newdic['mp1_name'] = q['field_5']['Item']['Name']
+            newdic['mp1_gr_id'] = q['field_5']['Item']['ID']
+        except Exception as e:
+            try:
+                nrmps = len(q['field_5']['Item'])
+                newdic['mp1_name'] = q['field_5']['Item'][0]['Name']
+                newdic['mp1_gr_id'] = q['field_5']['Item'][0]['ID']
+                restmps = []
+                for i in range(1, nrmps):
+                    restmps.append(q['field_5']['Item'][i]['Name'])
+                newdic['mp_other'] = ", ".join(restmps)           
+            except Exception as e:
+               newdic['mp1_name'] = None
+               newdic['mp1_gr_id']   = None
+         
+        # this is the code for field 6
+        try:
+            nr_newvar = len(q['field_6']['Item'])
+            newvar_rest = []
+            for i in range(0, nr_newvar):
+                name = q['field_6']['Item'][i]['Name']
+                newvar_rest.append(name)
+            newdic['new_var'] =   " / ".join(newvar_rest)
+        except KeyError:
+            #print(q['field_6'])
+            newdic['new_var'] = q['field_6']['Item']['Name']
+
+        try:
+            splitted = q['field_7']['Item']['Name'].split('(')
+            newdic['minister1'] = splitted[0]
+            newdic['ministry1'] = splitted[1].replace(')', '').lstrip().rstrip()         
+        except Exception as e:
+            nrministers = len(q['field_7']['Item'])
+            try:
+                splitted = q['field_7']['Item'][0]['Name'].split('(')
+                newdic['minister1'] = splitted[0]
+                newdic['ministry1'] = splitted[1].replace(')', '').lstrip().rstrip()
+                restministers = []
+                restministries = []
+                for i in range(1, nrministers):
+                    splitted = q['field_7']['Item'][i]['Name'].split('(')
+                    restministers.append(splitted[0])
+                    restministries.append(splitted[1].replace(')', '').lstrip().rstrip())
+                newdic['minister_other'] =   ", ".join(restministers)
+                newdic['ministry_other'] =   ", ".join(restministries)  
+            except KeyError:
+                newdic['minister1'] = None
+                newdic['ministry1'] = None
+                newdic['minister_other'] = None
+                newdic['ministry_other'] = None
+                
+        newdic['session'] = q['field_8']
+
+        try:
+            newdic['group1'] = q['field_9']['Item']['Name']
+        except Exception as e:
+            nrmgroups = len(q['field_9']['Item'])
+            newdic['group1']  = q['field_9']['Item'][0]['Name']
+            restgroups = []
+            for i in range(1, nrmgroups):
+               restgroups.append(q['field_9']['Item'][i]['Name'])
+            newdic['groups_other'] = ", ".join(restgroups)
+        try:
+            newdic['docid']  = q['field_10']['Item']['ID']
+            newdic['file']  = q['field_10']['Item']['File']
+        except TypeError:
+            print( q['ID'])
+            newdic['docid'] = None
+            newdic['file'] = None
+        newdic['to_prime'] =  q['field_12']
+        allqs.append(newdic)
+    return pd.DataFrame(allqs)
+    
