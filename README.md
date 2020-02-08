@@ -1,3 +1,3 @@
 # PYTHONscripts
 Data parsing for parliamentary control data.
-All credits to Carster Schwemer @ Bamberg Political Science.
+All credits to Carster Schwemmer @ Princeton (former Bamberg Political Science).
